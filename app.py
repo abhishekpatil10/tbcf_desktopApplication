@@ -5,25 +5,46 @@ import pandas as pd
 import threading
 from openpyxl import Workbook
 from openpyxl.styles import Border, Side
+from PIL import Image, ImageTk
 
 # Create the main window
 root = tk.Tk()
-root.title("CSV/Excel File Uploader & Calculator")
+root.title("Healthcare Finance Calc App")
+app_icon = "app_icon.png"  # Replace with your icon file path
+root.iconbitmap(app_icon)  
 root.state('zoomed')  # Fullscreen mode
 root.resizable(False, False)  # Disable resizing
 root.configure(bg="white")  # Light mode
 
-# Title Label
-header_label = tk.Label(root, text="CSV/Excel File Uploader & Calculator", font=("Arial", 18, "bold"), bg="white", fg="black")
-header_label.pack(pady=10)
-
-# Frame for file selection
+# Frame for layout
 file_frame = tk.Frame(root, bg="white")
-file_frame.pack(pady=10)
+file_frame.pack(pady=20, padx=20)
+
+# Load File Upload Icon
+icon_upload = Image.open("./images/fileUploadIcon.png")  # Replace with actual path
+icon_upload = icon_upload.resize((35,35), Image.Resampling.LANCZOS)
+icon_upload_tk = ImageTk.PhotoImage(icon_upload)
+
+# Row 1: File selection label
 file_label = tk.Label(file_frame, text="Upload a CSV or Excel file", font=("Arial", 14), bg="white", fg="black")
-file_label.pack(side=tk.LEFT, padx=10)
-button = tk.Button(file_frame, text="Choose File", command=lambda: upload_file())
-button.pack(side=tk.LEFT)
+file_label.grid(row=0, column=0, columnspan=2, pady=(0, 15))  # Centered with spacing
+
+# Styled File Upload Button (Matches Other Buttons)
+upload_button = tk.Button(
+    file_frame,
+    text=" Choose File",
+    command=lambda: upload_file(),
+    font=("Arial", 12, "bold"),
+    bg="#007bff",
+    padx=10, pady=10,
+    bd=2, relief="raised",
+    image=icon_upload_tk,
+    compound="left",  # Icon on left, text on right
+)
+upload_button.grid(row=1, column=0, pady=(5, 20), padx=10)
+
+# Keep reference to prevent garbage collection
+upload_button.image = icon_upload_tk
 
 # Variable to store the loaded data
 data = None
@@ -56,11 +77,72 @@ horizontal_scrollbar.pack(side="bottom", fill="x")
 treeview.configure(xscrollcommand=horizontal_scrollbar.set)
 
 # Button frame
+import tkinter as tk
+from PIL import Image, ImageTk
+
+# Load button icons
+icon_run = Image.open("./images/run_icon.png")  # Replace with actual path
+icon_run = icon_run.resize((35,35), Image.Resampling.LANCZOS)
+icon_run_tk = ImageTk.PhotoImage(icon_run)
+
+icon_download = Image.open("./images/download_icon.png")  # Replace with actual path
+icon_download = icon_download.resize((35,35), Image.Resampling.LANCZOS)
+icon_download_tk = ImageTk.PhotoImage(icon_download)
+
+icon_unique = Image.open("./images/unique_icon.png")  # Replace with actual path
+icon_unique = icon_unique.resize((35,35), Image.Resampling.LANCZOS)
+icon_unique_tk = ImageTk.PhotoImage(icon_unique)
+
+# Create a frame for buttons
 button_frame = tk.Frame(root, bg="white")
 button_frame.pack(pady=10)
-run_button = tk.Button(button_frame, text="Run Calculation", command=lambda: start_calculation())
-download_button = tk.Button(button_frame, text="Download Excel", command=lambda: start_download())
-download_unique_button = tk.Button(button_frame, text="Download Unique Calculation", command=lambda: start_download_unique())
+
+# Styled Run Calculation Button
+run_button = tk.Button(
+    button_frame,
+    text=" Run Calculation",
+    command=lambda: start_calculation(),
+    font=("Arial", 12, "bold"),
+    bg="#4CAF50",  # Green background 
+    padx=10, pady=10,
+    bd=2, relief="raised",
+    image=icon_run_tk,  # Add icon
+    compound="left",  # Icon on left, text on right
+)
+run_button.pack(side=tk.LEFT, padx=10, pady=5)
+
+# Styled Download Excel Button
+download_button = tk.Button(
+    button_frame,
+    text=" Download Excel",
+    command=lambda: start_download(),
+    font=("Arial", 12, "bold"),
+    bg="#2196F3",  # Blue background
+    padx=10, pady=10,
+    bd=2, relief="raised",
+    image=icon_download_tk,
+    compound="left",
+)
+download_button.pack(side=tk.LEFT, padx=10, pady=5)
+
+# Styled Download Unique Calculation Button
+download_unique_button = tk.Button(
+    button_frame,
+    text=" Download Unique Calculation",
+    command=lambda: start_download_unique(),
+    font=("Arial", 12, "bold"),
+    bg="#FF9800",  # Orange background
+    padx=10, pady=10,
+    bd=2, relief="raised",
+    image=icon_unique_tk,
+    compound="left",
+)
+download_unique_button.pack(side=tk.LEFT, padx=10, pady=5)
+
+# Keep references to images to prevent garbage collection
+run_button.image = icon_run_tk
+download_button.image = icon_download_tk
+download_unique_button.image = icon_unique_tk
 
 # Loading Label
 loading_label = tk.Label(root, text="", font=("Arial", 12, "italic"), bg="white", fg="blue")
@@ -69,7 +151,7 @@ loading_label.pack(pady=10)
 # Function to show a loading message
 def show_loading(message):
     loading_label.config(text=message)
-    root.update_idletasks()
+    root.update_idletasks()  # Forces UI update
 
 def hide_loading():
     loading_label.config(text="")
@@ -82,38 +164,64 @@ def upload_file():
         filetypes=[("CSV files", "*.csv"), ("Excel files", "*.xlsx"), ("Excel files", "*.xls")]
     )
 
-    if file_path:
-        try:
-            show_loading("Loading file...")
-            if file_path.endswith('.csv'):
-                data = pd.read_csv(file_path)
-            else:
-                data = pd.read_excel(file_path, header=0, skipfooter=0)
+    if not file_path:
+        print("No file selected.")
+        return
 
-            data.columns = data.columns.str.strip().str.lower()
-            data = data.dropna(axis=1, how='all')
-            data = data.fillna("--")
+    # Show loading message before starting
+    show_loading("Loading file...")
 
-            for row in treeview.get_children():
-                treeview.delete(row)
+    # Delay file processing to allow UI update
+    root.after(100, lambda: load_file(file_path))  # Runs after 100ms
 
-            treeview["columns"] = list(data.columns)
-            treeview["show"] = "headings"
+def load_file(file_path):
+    global data
+    try:
+        print(f"Selected file: {file_path}")  # Debugging
 
-            for col in data.columns:
-                treeview.heading(col, text=col, anchor="w")
-                treeview.column(col, width=150, anchor="w")
+        # Read CSV or Excel file
+        if file_path.endswith('.csv'):
+            data = pd.read_csv(file_path, encoding="utf-8", engine="python")
+        else:
+            data = pd.read_excel(file_path, engine="openpyxl")
 
-            for _, row in data.iterrows():
-                treeview.insert("", "end", values=row.tolist())
+        print(f"File loaded successfully with shape: {data.shape}")  # Debugging
 
+        # Data Cleaning
+        data.columns = data.columns.str.strip().str.lower()
+        data = data.dropna(axis=1, how='all')
+        data = data.fillna("--")
+
+        print(f"Processed Columns: {data.columns.tolist()}")  # Debugging
+
+        # Clear old data from Treeview
+        for row in treeview.get_children():
+            treeview.delete(row)
+
+        # Configure Treeview
+        treeview["columns"] = list(data.columns)
+        treeview["show"] = "headings"
+
+        for col in data.columns:
+            treeview.heading(col, text=col, anchor="w")
+            treeview.column(col, width=150, anchor="w")
+
+        # Insert Data into Treeview
+        for _, row in data.iterrows():
+            treeview.insert("", "end", values=row.tolist())
+
+        # Hide Upload Button, Show Run Button
+        if "button" in globals():
             button.pack_forget()
+        if "run_button" in globals():
             run_button.pack(side=tk.LEFT, padx=10)
 
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to load the file: {str(e)}")
-        finally:
-            hide_loading()
+    except Exception as e:
+        print(f"❌ Error while loading file: {str(e)}")
+        messagebox.showerror("Error", f"Failed to load the file.\nDetails: {str(e)}")
+
+    finally:
+        hide_loading()
 
 # Function to start calculation in a separate thread
 def start_calculation():
@@ -198,33 +306,53 @@ def start_download_unique():
     threading.Thread(target=download_unique_excel).start()
 
 # Function to download unique calculation results
-# Function to download unique calculation results
 def download_unique_excel():
     show_loading("Downloading Unique Calculation Excel...")
-    
+
     try:
         file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], title="Save as")
+
         if file_path:
+            # Create DataFrame with correct columns
             unique_df = pd.DataFrame(output_data, columns=["Doctor Name", "Net Amount", "HMNH", "DRS", "TDS", "Net DRS Amount"])
+
+            # Convert Doctor Name to string, strip spaces, and remove empty/invalid rows
+            unique_df["Doctor Name"] = unique_df["Doctor Name"].astype(str).str.strip()
+
+            # Remove rows where "Doctor Name" is empty, NaN, or "--"
+            unique_df = unique_df[~unique_df["Doctor Name"].isin(["", "nan", "NaN", "--"])]
+
+            # Perform groupby and sum
             unique_df = unique_df.groupby("Doctor Name", as_index=False).sum()
-            
+
+            # Debugging: Print cleaned data
+            print("Final Data Preview Before Writing to Excel:")
+            print(unique_df.head(5))
+
+            # Create Excel workbook
             wb = Workbook()
             ws = wb.active
-            ws.append(["Doctor Name", "Net Amount", "HMNH", "DRS", "TDS", "Net DRS Amount"])
-            
+
+            # Add headers from DataFrame
+            ws.append(list(unique_df.columns))
+
+            # Append cleaned data
             for row in unique_df.itertuples(index=False, name=None):
                 ws.append(row)
-            
+
+            # Apply border styling to all cells
             border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-            
             for row in ws.iter_rows():
                 for cell in row:
                     cell.border = border
-            
+
+            # Save the Excel file
             wb.save(file_path)
             messagebox.showinfo("Success", "Unique Calculation File saved successfully!")
+
     finally:
         hide_loading()
 
+        
 # Start the main event loop
 root.mainloop()
