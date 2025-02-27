@@ -1,0 +1,1 @@
+([('app', '/Users/admin/Desktop/python/pyDesktop/dist/app', 'EXECUTABLE')],)

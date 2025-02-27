@@ -10,8 +10,10 @@ from PIL import Image, ImageTk
 # Create the main window
 root = tk.Tk()
 root.title("Healthcare Finance Calc App")
-app_icon = "app_icon.png"  # Replace with your icon file path
-root.iconbitmap(app_icon)  
+
+app_icon_path = "./images/app_icon.png"  # Ensure this PNG exists in your project folder
+img = tk.PhotoImage(file=app_icon_path)
+root.iconphoto(True, img)  
 root.state('zoomed')  # Fullscreen mode
 root.resizable(False, False)  # Disable resizing
 root.configure(bg="white")  # Light mode
